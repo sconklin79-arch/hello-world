@@ -3,7 +3,7 @@ import os
 import tempfile
 import unittest
 
-from data_sources.csv_property_loader import load_properties
+from data_sources.csv_property_loader import load_properties, merge_latest_by_key
 
 
 class CsvPropertyLoaderTest(unittest.TestCase):
@@ -66,6 +66,57 @@ class CsvPropertyLoaderTest(unittest.TestCase):
         )
         properties = load_properties(path, field_map={"address": "ADDR"})
         self.assertEqual([p["address"] for p in properties], ["1 A St", "2 B St"])
+
+    def test_load_properties_carries_key_field(self):
+        path = self._write_csv(
+            [{"ADDR": "1 A St", "PARCEL_ID": "P1"}],
+            fieldnames=["ADDR", "PARCEL_ID"],
+        )
+        properties = load_properties(path, field_map={"address": "ADDR"}, key_field="PARCEL_ID")
+        self.assertEqual(properties[0]["_parcel_id"], "P1")
+
+    def test_merge_latest_by_key_requires_field_map(self):
+        with self.assertRaises(ValueError):
+            merge_latest_by_key([], "anything.csv", "PARCEL_ID", "SALE_DATE", field_map=None)
+
+    def test_merge_latest_by_key_picks_most_recent_sale(self):
+        base_path = self._write_csv(
+            [{"ADDR": "1 A St", "PARCEL_ID": "P1"}],
+            fieldnames=["ADDR", "PARCEL_ID"],
+        )
+        properties = load_properties(base_path, field_map={"address": "ADDR"}, key_field="PARCEL_ID")
+
+        sales_path = self._write_csv(
+            [
+                {"PARCEL_ID": "P1", "SALE_DATE": "2007-06-01", "SALE_AMOUNT": "150000"},
+                {"PARCEL_ID": "P1", "SALE_DATE": "2019-03-15", "SALE_AMOUNT": "220000"},
+            ],
+            fieldnames=["PARCEL_ID", "SALE_DATE", "SALE_AMOUNT"],
+        )
+        merged = merge_latest_by_key(
+            properties,
+            sales_path,
+            join_key_column="PARCEL_ID",
+            date_column="SALE_DATE",
+            field_map={"last_sale_year": "SALE_DATE"},
+        )
+        self.assertEqual(merged[0]["last_sale_year"], 2019)
+
+    def test_merge_latest_by_key_leaves_unmatched_properties_unchanged(self):
+        base_path = self._write_csv(
+            [{"ADDR": "1 A St", "PARCEL_ID": "P1"}],
+            fieldnames=["ADDR", "PARCEL_ID"],
+        )
+        properties = load_properties(base_path, field_map={"address": "ADDR"}, key_field="PARCEL_ID")
+
+        sales_path = self._write_csv(
+            [{"PARCEL_ID": "P2", "SALE_DATE": "2019-03-15"}],
+            fieldnames=["PARCEL_ID", "SALE_DATE"],
+        )
+        merged = merge_latest_by_key(
+            properties, sales_path, "PARCEL_ID", "SALE_DATE", {"last_sale_year": "SALE_DATE"}
+        )
+        self.assertNotIn("last_sale_year", merged[0])
 
 
 if __name__ == "__main__":
