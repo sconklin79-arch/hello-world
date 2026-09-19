@@ -75,6 +75,30 @@ class CsvPropertyLoaderTest(unittest.TestCase):
         properties = load_properties(path, field_map={"address": "ADDR"}, key_field="PARCEL_ID")
         self.assertEqual(properties[0]["_parcel_id"], "P1")
 
+    def test_load_properties_strips_padded_key_field(self):
+        path = self._write_csv(
+            [{"ADDR": "1 A St", "PARCEL_ID": "P1      "}],
+            fieldnames=["ADDR", "PARCEL_ID"],
+        )
+        properties = load_properties(path, field_map={"address": "ADDR"}, key_field="PARCEL_ID")
+        self.assertEqual(properties[0]["_parcel_id"], "P1")
+
+    def test_merge_latest_by_key_matches_despite_padded_secondary_key(self):
+        base_path = self._write_csv(
+            [{"ADDR": "1 A St", "PARCEL_ID": "P1"}],
+            fieldnames=["ADDR", "PARCEL_ID"],
+        )
+        properties = load_properties(base_path, field_map={"address": "ADDR"}, key_field="PARCEL_ID")
+
+        sales_path = self._write_csv(
+            [{"PARCEL_ID": "P1      ", "SALE_DATE": "2019-03-15"}],
+            fieldnames=["PARCEL_ID", "SALE_DATE"],
+        )
+        merged = merge_latest_by_key(
+            properties, sales_path, "PARCEL_ID", "SALE_DATE", {"last_sale_year": "SALE_DATE"}
+        )
+        self.assertEqual(merged[0]["last_sale_year"], 2019)
+
     def test_merge_latest_by_key_requires_field_map(self):
         with self.assertRaises(ValueError):
             merge_latest_by_key([], "anything.csv", "PARCEL_ID", "SALE_DATE", field_map=None)

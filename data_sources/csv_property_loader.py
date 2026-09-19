@@ -62,7 +62,7 @@ def load_properties(path, field_map, key_field=None, key_as="_parcel_id"):
         for row in reader:
             mapped = _map_row(row, field_map)
             if key_field:
-                mapped[key_as] = row.get(key_field)
+                mapped[key_as] = _normalize_key(row.get(key_field))
             properties.append(mapped)
     return properties
 
@@ -82,7 +82,7 @@ def merge_latest_by_key(properties, secondary_path, join_key_column, date_column
     with open(secondary_path, newline="") as f:
         reader = csv.DictReader(f)
         for row in reader:
-            key = row.get(join_key_column)
+            key = _normalize_key(row.get(join_key_column))
             date_value = row.get(date_column) or ""
             if key not in latest_by_key or date_value > (latest_by_key[key].get(date_column) or ""):
                 latest_by_key[key] = row
@@ -132,3 +132,9 @@ def _extract_year(date_str):
         if len(group) == 4:
             return int(group)
     return None
+
+
+def _normalize_key(value):
+    """Strip surrounding whitespace from a join-key value — some county
+    exports pad ids to a fixed width (e.g. `"010101001      "`)."""
+    return value.strip() if isinstance(value, str) else value
