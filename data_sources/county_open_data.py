@@ -1,7 +1,6 @@
-"""Generic client for county/city open-data portals built on Socrata
-(the same platform behind data_sources.chicago_open_data) — property
-records, tax assessments, and sale history published by county
-assessors, recorders, and treasurers.
+"""Generic client for county/city open-data portals built on Socrata —
+property records, tax assessments, and sale history published by
+county assessors, recorders, and treasurers.
 
 Socrata is a common backend for this kind of public data (Cook County,
 NYC, LA County, and many others all run it), but each portal's domain
