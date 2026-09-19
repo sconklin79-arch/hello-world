@@ -1,6 +1,7 @@
 """Client for the City of Chicago's public Socrata open-data portal —
-building permits and building-code violations, to enrich MRED listings
-with motivation signals (deferred maintenance, active violations).
+building permits and building-code violations, to enrich listings (e.g.
+from data_sources.zenlist) with motivation signals (deferred
+maintenance, active violations).
 
 No API key is required for light use; set CHICAGO_APP_TOKEN to raise
 Socrata's rate limit if you're pulling a lot of data.
