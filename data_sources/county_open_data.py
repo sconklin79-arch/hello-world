@@ -62,6 +62,10 @@ def fetch_records(domain, dataset_id, where=None, select=None, limit=1000, app_t
             f"county open data request failed for {domain}/{dataset_id}: "
             f"{exc.code} {exc.reason}"
         ) from exc
+    except urllib.error.URLError as exc:
+        raise ValueError(
+            f"county open data request failed for {domain}/{dataset_id}: {exc.reason}"
+        ) from exc
 
 
 def summarize_neighborhood_sales(records, price_field):

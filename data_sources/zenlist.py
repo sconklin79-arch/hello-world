@@ -49,6 +49,8 @@ def fetch_listings(api_key=None, base_url=None, params=None, limit=50):
             payload = json.loads(response.read())
     except urllib.error.HTTPError as exc:
         raise ValueError(f"Zenlist listings request failed: {exc.code} {exc.reason}") from exc
+    except urllib.error.URLError as exc:
+        raise ValueError(f"Zenlist listings request failed: {exc.reason}") from exc
 
     return payload.get("listings", payload.get("data", []))
 

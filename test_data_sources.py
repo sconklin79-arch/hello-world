@@ -44,6 +44,12 @@ class ZenlistTest(unittest.TestCase):
         with self.assertRaises(ValueError):
             zenlist.fetch_listings(api_key="bad-key")
 
+    @patch("data_sources.zenlist.urllib.request.urlopen")
+    def test_fetch_listings_connection_error(self, mock_urlopen):
+        mock_urlopen.side_effect = zenlist.urllib.error.URLError("blocked by proxy")
+        with self.assertRaises(ValueError):
+            zenlist.fetch_listings(api_key="key123")
+
     def test_normalize_listing_maps_fields(self):
         raw = {
             "address": "1 Main St",
@@ -84,6 +90,12 @@ class ChicagoOpenDataTest(unittest.TestCase):
         mock_urlopen.return_value = _fake_response([{"permit_": "100"}])
         records = chicago_open_data.fetch_permits("Main St")
         self.assertEqual(records, [{"permit_": "100"}])
+
+    @patch("data_sources.chicago_open_data.urllib.request.urlopen")
+    def test_fetch_permits_connection_error(self, mock_urlopen):
+        mock_urlopen.side_effect = chicago_open_data.urllib.error.URLError("blocked by proxy")
+        with self.assertRaises(ValueError):
+            chicago_open_data.fetch_permits("Main St")
 
     def test_enrich_property_flags_open_violations(self):
         base = {"asking_price": 100000}

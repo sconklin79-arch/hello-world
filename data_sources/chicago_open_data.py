@@ -37,6 +37,8 @@ def _get(dataset_id, params):
         raise ValueError(
             f"Chicago open data request failed: {exc.code} {exc.reason}"
         ) from exc
+    except urllib.error.URLError as exc:
+        raise ValueError(f"Chicago open data request failed: {exc.reason}") from exc
 
 
 def fetch_permits(address, limit=50):
