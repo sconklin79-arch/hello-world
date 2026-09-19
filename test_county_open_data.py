@@ -42,6 +42,14 @@ class CountyOpenDataTest(unittest.TestCase):
         with self.assertRaises(ValueError):
             county_open_data.fetch_records(domain="example.gov", dataset_id="abcd-1234")
 
+    @patch("data_sources.county_open_data.urllib.request.urlopen")
+    def test_fetch_records_connection_error(self, mock_urlopen):
+        mock_urlopen.side_effect = county_open_data.urllib.error.URLError(
+            "Tunnel connection failed: 403 Forbidden"
+        )
+        with self.assertRaises(ValueError):
+            county_open_data.fetch_records(domain="example.gov", dataset_id="abcd-1234")
+
     def test_summarize_neighborhood_sales(self):
         records = [
             {"sale_price": "200000"},
